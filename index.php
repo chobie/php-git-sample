@@ -51,15 +51,29 @@ $app->get('/', function(){
 		$commit = $repo->getCommit($ref->getId());
 		foreach($commit->getTree() as $entry) {
 		if($entry->isBlob()) {
-		$head = $entry->toHeader();
-		echo "<tr>";
-		printf("<td><a href='/blob/%s/%s'>%s</a></td>",REFNAME,$entry->name,$entry->name);
-		printf("<td>%d</td>",$head->size);
-		echo "</tr>";
+			$head = $entry->toHeader();
+			echo "<tr>";
+			printf("<td><a href='/blob/%s/%s'>%s</a></td>",REFNAME,$entry->name,$entry->name);
+			$last = git_log_file($commit,$entry->name);
+			if($last){
+				printf("<td>%s</td>",$last->getShortMessage());
+			}else{
+				printf("<td></td>");
+			}
+			printf("<td>%d</td>",$head->size);
+			echo "</tr>";
 		} else {
 		echo "<tr>";
 		printf("<td><a href='/tree/%s/%s'>%s/</a></td>",REFNAME,$entry->name,$entry->name);
-		printf("<td>&nbsp;</td>");
+
+		$last = git_log_file($commit,$entry->name);
+		if($last){
+			printf("<td>%s</td>",$last->getShortMessage());
+		}else{
+			printf("<td></td>");
+		}
+		echo "<td>&nbsp</td>";
+
 		echo "</tr>";
 		}
 		}
@@ -97,14 +111,28 @@ $app->get("/tree/{reference}/{name}",function($name){
 		echo "<table border='1'>";
 		foreach($tree->getIterator() as $entry) {
 		if($entry->isBlob()) {
-		$head = $entry->toHeader();
-		echo "<tr>";
-		printf("<td><a href='/blob/%s/%s/%s'>%s</a></td>",REFNAME,$name,$entry->name,$entry->name);
-		printf("<td>%d</td>",$head->size);
-		echo "</tr>";
+			$head = $entry->toHeader();
+			echo "<tr>";
+			printf("<td><a href='/blob/%s/%s/%s'>%s</a></td>",REFNAME,$name,$entry->name,$entry->name);
+
+			$last = git_log_file($commit,$name. "/" . $entry->name);
+			if($last){
+				printf("<td>%s</td>",$last->getShortMessage());
+			}else{
+				printf("<td></td>");
+			}
+			printf("<td>%d</td>",$head->size);
+
+			echo "</tr>";
 		} else {
 		echo "<tr>";
 		printf("<td><a href='/tree/%s/%s/%s'>%s/</a></td>",REFNAME,$name,$entry->name,$entry->name);
+		$last = git_log_file($commit,$name . "/" . $entry->name);
+		if($last){
+			printf("<td>%s</td>",$last->getShortMessage());
+		}else{
+			printf("<td></td>");
+		}
 		printf("<td>&nbsp;</td>");
 		echo "</tr>";
 		}
@@ -114,6 +142,9 @@ $app->get("/tree/{reference}/{name}",function($name){
 
 })->assert("name",".+");
 
+$app->get("/favicon.ico",function(){
+	header("404 Not found");
+});
 $app->run();
 
 $memories['end'] = memory_get_usage();
@@ -125,7 +156,6 @@ show_memory_usage($memories);
 /**
  * Helper Functions
  */
-
 function show_calculatetd_time($profiler)
 {
 	echo "<table border='1'>";
@@ -136,11 +166,35 @@ function show_calculatetd_time($profiler)
 	echo "</table>";
 }
 
+
+function git_log_file(Git\Commit $commit, $filename, $id = null,$last = null,$lasto = null)
+{
+	$tree = $commit->getTree();
+	$object = resolve_filename($tree, $filename);
+	if($object){
+		$id2 = $object->getId();
+
+		// FIXME: i don't care about merge commit.
+		if($id && $id != $id2) {
+			return $last;
+		} else if(!$id) {
+			return git_log_file($commit->getParent(0),$filename,$id2, $commit,$object);
+		} else {
+			return git_log_file($commit->getParent(0),$filename,$id, $commit,$object);
+		}
+	} else {
+		if($last) {
+			return $last;
+		}else {
+		}
+	}
+}
+
 function show_memory_usage($memories){
 	echo "<table border='1'>";
 	echo "<tr><td colspan=2>Memory Usage</td></tr>";
 	foreach($memories as $key => $value) {
-		echo "<tr><td>{$key}</td><td>{$value}</td></tr>";
+		echo "<tr><td>{$key}</td><td>" . round($value/1024/1024,2) . "Mb</td></tr>";
 	}
 	echo "</table>";
 }
