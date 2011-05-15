@@ -22,6 +22,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+$profiler['begin'] = microtime(true);
 $memories['begin'] = memory_get_usage();
 
 require "silex.phar";
@@ -116,12 +117,24 @@ $app->get("/tree/{reference}/{name}",function($name){
 $app->run();
 
 $memories['end'] = memory_get_usage();
+$profiler['end'] = microtime(true);
 
+show_calculatetd_time($profiler);
 show_memory_usage($memories);
 
 /**
  * Helper Functions
  */
+
+function show_calculatetd_time($profiler)
+{
+	echo "<table border='1'>";
+	echo "<tr><td colspan=2>Calculated Time</td></tr>";
+	echo "<tr><td>Time</td><td>";
+	echo $profiler['end']-$profiler['begin'];
+	echo "</td></tr>";
+	echo "</table>";
+}
 
 function show_memory_usage($memories){
 	echo "<table border='1'>";
