@@ -46,6 +46,7 @@ $app->get('/', function(){
 
 		echo "<html><body>";
 		echo "<h1><a href='/'>" . REPOSITORY_NAME . "</a></h1>";
+		echo "<a href='/log/10'>View log</a>";
 		echo "<table border='1'>";
 
 		$commit = $repo->getCommit($ref->getId());
@@ -86,6 +87,7 @@ $app->get('/blob/{reference}/{name}',function($name){
 
 		echo "<html><body>";
 		echo "<h1><a href='/'>" . REPOSITORY_NAME . "</a></h1>";
+		echo "<a href='/log/10'>View log</a>";
 
 		$commit = $repo->getCommit($ref->getId());
 		$blob = resolve_filename($commit->getTree(), $name);
@@ -97,6 +99,34 @@ $app->get('/blob/{reference}/{name}',function($name){
 		}
 		})->assert("name",".+");
 
+$app->get('/log', function () use($app){
+    return $app->redirect('/log/10');
+});
+$app->get("/log/{limit}", function($limit){
+		$repo = new Git\Repository(GIT_REPOSITORY_DIR);
+		$ref = $repo->lookupRef(DEFAULT_REFERENCE);
+
+                echo "<html><body>";
+                echo "<h1><a href='/'>" . REPOSITORY_NAME . "</a></h1>";
+
+		echo "<span style=\"font-family: monospace;\">";
+		$commit = $repo->getCommit($ref->getId());
+		for($i = 0; $i < $limit; $i++)
+		{
+			echo "<span style=\"color: brown;\">" . $commit->getId() . "</span> " . $commit->getShortMessage() . "<br />";
+			if($commit->getParent() instanceof Git\Commit)
+			{
+				$commit = $commit->getParent();
+			}
+			else
+			{
+				echo "-- NO MORE COMMITS --";
+				break;
+			}
+		}
+		echo "</span>";
+		});
+
 $app->get("/tree/{reference}/{name}",function($name){
 
 		$repo =  new Git\Repository(GIT_REPOSITORY_DIR);
@@ -104,6 +134,7 @@ $app->get("/tree/{reference}/{name}",function($name){
 
 		echo "<html><body>";
 		echo "<h1><a href='/'>" . REPOSITORY_NAME . "</a></h1>";
+		echo "<a href='/log/10'>View log</a>";
 
 		$commit = $repo->getCommit($ref->getId());
 		$tree = resolve_filename($commit->getTree(), $name);
