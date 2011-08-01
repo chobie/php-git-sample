@@ -109,7 +109,9 @@ $app->get("/log/{limit}", function($limit){
                 echo "<html><body>";
                 echo "<h1><a href='/'>" . REPOSITORY_NAME . "</a></h1>";
 
-		echo "<span style=\"font-family: monospace;\">";
+		echo "<p>Viewing up to the latest {$limit} commits.</p>";
+
+		echo "<p style=\"font-family: monospace;\">";
 		$commit = $repo->getCommit($ref->getId());
 		for($i = 0; $i < $limit; $i++)
 		{
@@ -124,7 +126,7 @@ $app->get("/log/{limit}", function($limit){
 				break;
 			}
 		}
-		echo "</span>";
+		echo "</p>";
 		});
 
 $app->get("/tree/{reference}/{name}",function($name){
