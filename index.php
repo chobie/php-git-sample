@@ -116,11 +116,11 @@ $app->get("/log/{limit}", function($limit){
 		for($i = 0; $i < $limit; $i++)
 		{
 			echo "<span style=\"color: brown;\">" . $commit->getId() . "</span> " . $commit->getShortMessage() . "<br />";
-			if($commit->getParent() instanceof Git\Commit)
+			try
 			{
 				$commit = $commit->getParent();
 			}
-			else
+			catch(Exception $ex)
 			{
 				echo "-- NO MORE COMMITS --";
 				break;
